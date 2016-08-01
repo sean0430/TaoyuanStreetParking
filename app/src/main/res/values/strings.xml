@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">桃園路邊停車格資訊查詢</string>
+    <string name="last_time">最近更新時間: </string>
+    <string name="tp_name">路段收費標準: </string>
+    <string name="search">搜尋</string>
+    <string name="dollar">元</string>
+    <string name="rd_begin">路段起點</string>
+    <string name="rd_end">路段迄點</string>
+    <string name="location_permission_title">請求位置權限</string>
+    <string name="location_permission_message">需要給予位置權限，才能取得當前位置。</string>
+    <string name="grant">確認</string>
+    <string name="deny">取消</string>
+    <string name="location_permission_deny">位置權限取得失敗</string>
+    <string name="setting">設定</string>
+    <string name="no_result">很抱歉，無法取得所在位置路名</string>
+    <string name="search_by_user_self">手動搜尋</string>
+
+</resources>
