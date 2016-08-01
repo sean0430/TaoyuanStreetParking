@@ -67,9 +67,9 @@ public class MainModelImpl implements MainModel {
                     "location_type=ROOFTOP&" +
                     "latlng=";
 
-    public MainModelImpl(Context context) {
-
-        API_KEY = context.getResources().getString(R.string.API_KEY);
+    @Override
+    public void setApiKey(String apiKey) {
+        API_KEY = apiKey;
     }
 
 
@@ -113,7 +113,8 @@ public class MainModelImpl implements MainModel {
             JSONArray recordJSON_ARRAY = new JSONArray(recordsStr);
             for (int i = 0; i < recordJSON_ARRAY.length(); i++) {
                 JSONObject jsonObject = recordJSON_ARRAY.getJSONObject(i);
-                StreetParkingInfo streetParkingInfo = formatJSONToStreetParkingInfo(jsonObject);
+                StreetParkingInfo streetParkingInfo =
+                        formatJSONToStreetParkingInfo(jsonObject);
                 streetParkingInfos.add(streetParkingInfo);
             }
 
@@ -197,7 +198,8 @@ public class MainModelImpl implements MainModel {
         try {
             JSONObject responseJSON = new JSONObject(responseStr);
             JSONArray resultJSONArray = responseJSON.getJSONArray(RESULTS);
-            JSONArray addressComponentsArray = resultJSONArray.getJSONObject(0).getJSONArray(ADDRESS_COMPONENTS);
+            JSONArray addressComponentsArray =
+                    resultJSONArray.getJSONObject(0).getJSONArray(ADDRESS_COMPONENTS);
 
             if (addressComponentsArray.length() > 0) {
                 for (int i = 0; i < addressComponentsArray.length(); i++) {

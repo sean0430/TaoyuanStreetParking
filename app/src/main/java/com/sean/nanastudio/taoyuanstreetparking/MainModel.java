@@ -36,5 +36,7 @@ public interface MainModel {
     void setQueryStr(String queryStr);
 
     String getGeocodeRoadName(Location location);
+
+    void setApiKey(String apiKey);
 }
 

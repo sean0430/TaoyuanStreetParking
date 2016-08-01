@@ -40,6 +40,8 @@ public class MainPresenterImpl implements MainPresenter {
     public void onCreate() {
         view.setLayoutContentView();
         view.setActionBar();
+        String apiKey = view.getApiKey();
+        model.setApiKey(apiKey);
         view.getStreetParkingInfosFromAPI();
         view.setFabLocationListener();
     }

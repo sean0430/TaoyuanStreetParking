@@ -44,7 +44,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -57,7 +56,8 @@ import com.google.android.gms.location.LocationServices;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
-        implements MainView, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+        implements MainView, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
 
     private static final int PERMISSION_REQUEST_LOCATION = 10001;
 
@@ -66,14 +66,13 @@ public class MainActivity extends AppCompatActivity
     private Location lastLocation;
 
     private SearchView searchView;
-    private SearchManager searchManager;
     private MenuItem searchItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        presenter = new MainPresenterImpl(this, new MainModelImpl(this));
+        presenter = new MainPresenterImpl(this, new MainModelImpl());
         presenter.onCreate();
 
     }
@@ -94,9 +93,33 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
 
         getMenuInflater().inflate(R.menu.search, menu);
+
+        setSearchView(menu);
+
+        searchItem = menu.findItem(R.id.action_search);
+        MenuItemCompat.setOnActionExpandListener(searchItem,
+                new MenuItemCompat.OnActionExpandListener() {
+                    @Override
+                    public boolean onMenuItemActionExpand(MenuItem item) {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onMenuItemActionCollapse(MenuItem item) {
+                        presenter.clearQueryStr();
+                        getStreetParkingInfosFromAPI();
+                        return true;
+                    }
+                });
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private void setSearchView(Menu menu) {
+
         searchView = (SearchView) MenuItemCompat.getActionView(menu.findItem(R.id.action_search));
 
-        searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
+        SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -123,25 +146,6 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
-
-
-        searchItem = menu.findItem(R.id.action_search);
-        MenuItemCompat.setOnActionExpandListener(searchItem, new MenuItemCompat.OnActionExpandListener() {
-            @Override
-            public boolean onMenuItemActionExpand(MenuItem item) {
-                return true;
-            }
-
-            @Override
-            public boolean onMenuItemActionCollapse(MenuItem item) {
-                presenter.clearQueryStr();
-                getStreetParkingInfosFromAPI();
-                return true;
-            }
-        });
-
-
-        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
@@ -292,7 +296,8 @@ public class MainActivity extends AppCompatActivity
 
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
@@ -390,7 +395,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
             return;
         }
         lastLocation = LocationServices.FusedLocationApi
@@ -439,6 +447,11 @@ public class MainActivity extends AppCompatActivity
                     }
                 })
                 .show();
+    }
+
+    @Override
+    public String getApiKey() {
+        return getResources().getString(R.string.API_KEY);
     }
 
 
