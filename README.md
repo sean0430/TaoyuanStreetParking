@@ -11,7 +11,7 @@
 </br>
 
 
-##第一版只有基本功能，內容如下
+##第一版只有基本功能
 
 先由[桃園市政府資料開放平台](http://data.tycg.gov.tw/TYCG_OPD/)
 中的[路邊停車資訊 API](http://data.tycg.gov.tw/TYCG_OPD/opendata/datalist/datasetMeta/outboundDesc?id=6ba44925-43ed-4bc7-8243-c22ab10ca4ff&rid=27d2edc9-890e-4a42-bcae-6ba78dd3c331)取得資料
