@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        presenter = new MainPresenterImpl(this, new MainModelImpl());
+        presenter = new MainPresenterImpl(this, new MainModelImpl(this));
         presenter.onCreate();
 
     }

@@ -18,6 +18,7 @@
 package com.sean.nanastudio.taoyuanstreetparking;
 
 
+import android.content.Context;
 import android.location.Location;
 
 import org.json.JSONArray;
@@ -40,7 +41,6 @@ public class MainModelImpl implements MainModel {
 
     private static final String RESULT = "result";
     private static final String RECORDS = "records";
-    private static final String API_KEY = "AIzaSyBBtSCc2dQWcNBIfRdEAjlESsAPl56zKWU";
     private static final String RESULTS = "results";
     private static final String ADDRESS_COMPONENTS = "address_components";
     private static final String TYPES = "types";
@@ -48,6 +48,7 @@ public class MainModelImpl implements MainModel {
     private static final String SHORT_NAME = "short_name";
     private static final String ROAD = "路";
     private static final String STREET = "街";
+    private String API_KEY;
 
 
     private static List<StreetParkingInfo> streetParkingInfos = new ArrayList<>();
@@ -65,6 +66,11 @@ public class MainModelImpl implements MainModel {
                     "language=zh_TW&" +
                     "location_type=ROOFTOP&" +
                     "latlng=";
+
+    public MainModelImpl(Context context) {
+
+        API_KEY = context.getResources().getString(R.string.API_KEY);
+    }
 
 
     @Override
