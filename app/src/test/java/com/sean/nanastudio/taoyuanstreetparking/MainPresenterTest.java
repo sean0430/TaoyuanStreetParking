@@ -54,6 +54,8 @@ public class MainPresenterTest {
 
         Mockito.verify(view).setLayoutContentView();
         Mockito.verify(view).setActionBar();
+        String apiKey = view.getApiKey();
+        Mockito.verify(model).setApiKey(apiKey);
         Mockito.verify(view).getStreetParkingInfosFromAPI();
 
     }
