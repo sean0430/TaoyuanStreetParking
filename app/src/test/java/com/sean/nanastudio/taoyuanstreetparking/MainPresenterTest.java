@@ -123,8 +123,10 @@ public class MainPresenterTest {
 
         Location location = Mockito.mock(Location.class);
         presenter.getLocation(location);
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
 
-        Mockito.verify(model).getGeocodeRoadName(location);
+        Mockito.verify(model).getGeocodeRoadName(latitude, longitude);
 
     }
 
