@@ -134,7 +134,9 @@ public class MainPresenterImpl implements MainPresenter {
 
 
         } else {
-            resultStr = model.getGeocodeRoadName(location);
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+            resultStr = model.getGeocodeRoadName(latitude, longitude);
 
         }
 

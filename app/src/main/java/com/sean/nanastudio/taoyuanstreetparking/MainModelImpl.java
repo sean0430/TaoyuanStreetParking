@@ -17,10 +17,6 @@
 
 package com.sean.nanastudio.taoyuanstreetparking;
 
-
-import android.content.Context;
-import android.location.Location;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -48,6 +44,7 @@ public class MainModelImpl implements MainModel {
     private static final String SHORT_NAME = "short_name";
     private static final String ROAD = "路";
     private static final String STREET = "街";
+    private static final String STREET_OR_ROAD_NAME_NOT_FOUND = "Street or road name not found";
     private String API_KEY;
 
 
@@ -169,15 +166,12 @@ public class MainModelImpl implements MainModel {
     }
 
     @Override
-    public String getGeocodeRoadName(Location location) {
-
-
-        String roadOrStreetName = "";
+    public String getGeocodeRoadName(double latitude, double longitude) {
 
         String requestStr = String.format("%s%s,%s&key=%s",
                 GEOCODE_ADDRESS_URL,
-                location.getLatitude(),
-                location.getLongitude(),
+                latitude,
+                longitude,
                 API_KEY);
 
         Request request = new Request.Builder()
@@ -185,49 +179,52 @@ public class MainModelImpl implements MainModel {
                 .get()
                 .build();
 
-        String responseStr = "";
 
         try {
             Response response = okHttpClient.newCall(request).execute();
-            responseStr = response.body().string();
+            String responseStr = response.body().string();
+            return parseGeocodeResponseToRoadOrStreetName(responseStr);
 
-        } catch (IOException e) {
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
+
         }
+        return STREET_OR_ROAD_NAME_NOT_FOUND;
 
-        try {
-            JSONObject responseJSON = new JSONObject(responseStr);
-            JSONArray resultJSONArray = responseJSON.getJSONArray(RESULTS);
-            JSONArray addressComponentsArray =
-                    resultJSONArray.getJSONObject(0).getJSONArray(ADDRESS_COMPONENTS);
+    }
 
-            if (addressComponentsArray.length() > 0) {
-                for (int i = 0; i < addressComponentsArray.length(); i++) {
-                    JSONObject addressComponentsJSON = addressComponentsArray.getJSONObject(i);
-                    String routeStr = addressComponentsJSON.getString(TYPES);
-                    if (ROUTE.equals(routeStr.trim())) {
-                        String shortNameStr = addressComponentsJSON.getString(SHORT_NAME);
+    private String parseGeocodeResponseToRoadOrStreetName(String responseStr) throws JSONException {
 
+        JSONObject responseJSON = new JSONObject(responseStr);
+        JSONArray resultJSONArray = responseJSON.getJSONArray(RESULTS);
+        JSONArray addressComponentsArray =
+                resultJSONArray.getJSONObject(0).getJSONArray(ADDRESS_COMPONENTS);
 
-                        if (shortNameStr.indexOf(ROAD) > 0) {
-                            roadOrStreetName = shortNameStr.substring(0, shortNameStr.indexOf(ROAD));
+        if (addressComponentsArray.length() > 0) {
+            for (int i = 0; i < addressComponentsArray.length(); i++) {
+                JSONObject addressComponentsJSON = addressComponentsArray.getJSONObject(i);
+                String routeStr = addressComponentsJSON.getString(TYPES);
+                if (ROUTE.equals(routeStr.trim())) {
+                    String shortNameStr = addressComponentsJSON.getString(SHORT_NAME);
+                    return getSubString(shortNameStr);
 
-                        } else if (shortNameStr.indexOf(STREET) > 0) {
-                            roadOrStreetName = shortNameStr.substring(0, shortNameStr.indexOf(STREET));
-
-                        }
-
-                        return roadOrStreetName;
-                    }
                 }
             }
-
-        } catch (JSONException e) {
-            e.printStackTrace();
         }
 
+        return STREET_OR_ROAD_NAME_NOT_FOUND;
+    }
 
-        return responseStr;
+    private String getSubString(String targetStr) {
+        if (targetStr.indexOf(ROAD) > 0) {
+            return targetStr.substring(0, targetStr.indexOf(ROAD));
+
+        } else if (targetStr.indexOf(STREET) > 0) {
+            return targetStr.substring(0, targetStr.indexOf(STREET));
+
+        } else {
+            return STREET_OR_ROAD_NAME_NOT_FOUND;
+        }
 
     }
 

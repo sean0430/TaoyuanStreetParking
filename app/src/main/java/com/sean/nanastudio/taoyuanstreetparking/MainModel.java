@@ -17,8 +17,6 @@
 
 package com.sean.nanastudio.taoyuanstreetparking;
 
-import android.location.Location;
-
 import java.util.List;
 
 /**
@@ -35,8 +33,8 @@ public interface MainModel {
 
     void setQueryStr(String queryStr);
 
-    String getGeocodeRoadName(Location location);
-
     void setApiKey(String apiKey);
+
+    String getGeocodeRoadName(double latitude, double longitude);
 }
 
