@@ -46,6 +46,16 @@
 
 </br>
 </br>
+
+
+##第三版修改程式碼
+
+使用 RxJava 和 Retrolambda
+
+使程式碼更為簡潔乾靜
+
+</br>
+</br>
 ##License
 
 
