@@ -29,6 +29,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import rx.Observable;
+import rx.functions.Func1;
 
 /**
  * TaoyuanStreetParking
@@ -103,55 +104,56 @@ public class MainModelImpl implements MainModel {
         }
 
 
-        try {
-            JSONObject responseJSON = new JSONObject(responseStr);
-            String resultStr = responseJSON.getString(RESULT);
-            JSONObject resultJSON = new JSONObject(resultStr);
-            String recordsStr = resultJSON.getString(RECORDS);
-            JSONArray recordJSON_ARRAY = new JSONArray(recordsStr);
-
-            List<JSONObject> jsonObjects = new ArrayList<>();
-            for (int i = 0; i < recordJSON_ARRAY.length(); i++) {
-                jsonObjects.add(recordJSON_ARRAY.getJSONObject(i));
-            }
-
-            Observable.from(jsonObjects)
-                    .flatMap(Observable::just)
-                    .subscribe(jsonObject -> {
-                        try {
-                            StreetParkingInfo streetParkingInfo =
-                                    formatJSONToStreetParkingInfo(jsonObject);
-                            streetParkingInfos.add(streetParkingInfo);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
+        final String finalResponseStr = responseStr;
+        Observable.just(responseStr)
+                .flatMap((Func1<String, Observable<?>>) s -> {
+                    List<JSONObject> jsonObjects = new ArrayList<>();
+                    try {
+                        JSONObject responseJSON = new JSONObject(finalResponseStr);
+                        String resultStr = responseJSON.getString(RESULT);
+                        JSONObject resultJSON = new JSONObject(resultStr);
+                        String recordsStr = resultJSON.getString(RECORDS);
+                        JSONArray resultArray = new JSONArray(recordsStr);
+                        jsonObjects = new ArrayList<>();
+                        for (int i = 0; i < resultArray.length(); i++) {
+                            jsonObjects.add(resultArray.getJSONObject(i));
                         }
-                    });
-
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    return Observable.from(jsonObjects);
+                })
+                .subscribe(jsonObject -> {
+                    StreetParkingInfo streetParkingInfo =
+                            formatJSONToStreetParkingInfo((JSONObject) jsonObject);
+                    streetParkingInfos.add(streetParkingInfo);
+                });
 
 
         MainModelImpl.streetParkingInfos = streetParkingInfos;
         return streetParkingInfos;
     }
 
-    private StreetParkingInfo formatJSONToStreetParkingInfo(JSONObject jsonObject)
-            throws JSONException {
-        String rd_name = jsonObject.getString("rd_name");
-        rd_name = rd_name.replace("00", "");
-        String rd_begin = jsonObject.getString("rd_begin");
-        String rd_end = jsonObject.getString("rd_end");
-        String rd_count = jsonObject.getString("rd_count");
-        String use_cnt = jsonObject.getString("use_cnt");
-        String last_time = jsonObject.getString("last_time");
-        String tp_name = jsonObject.getString("tp_name");
+    private StreetParkingInfo formatJSONToStreetParkingInfo(JSONObject jsonObject) {
+        try {
+            String rd_name = jsonObject.getString("rd_name");
+            rd_name = rd_name.replace("00", "");
+            String rd_begin = jsonObject.getString("rd_begin");
+            String rd_end = jsonObject.getString("rd_end");
+            String rd_count = jsonObject.getString("rd_count");
+            String use_cnt = jsonObject.getString("use_cnt");
+            String last_time = jsonObject.getString("last_time");
+            String tp_name = jsonObject.getString("tp_name");
 
-        TpNameInfo tpNameInfo = parseTpNameToNAmeInfo.parse(tp_name);
+            TpNameInfo tpNameInfo = parseTpNameToNAmeInfo.parse(tp_name);
 
-        return new StreetParkingInfo(rd_name, rd_begin, rd_end, rd_count,
-                use_cnt, last_time, tp_name, tpNameInfo);
+            return new StreetParkingInfo(rd_name, rd_begin, rd_end, rd_count,
+                    use_cnt, last_time, tp_name, tpNameInfo);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return new StreetParkingInfo("", "", "", "", "", "", "", null);
     }
 
 

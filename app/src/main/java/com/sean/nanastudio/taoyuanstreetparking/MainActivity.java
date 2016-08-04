@@ -42,7 +42,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -68,7 +67,7 @@ public class MainActivity extends AppCompatActivity
         GoogleApiClient.OnConnectionFailedListener {
 
     private static final String TAG = "MainActivity";
-    
+
     private static final int PERMISSION_REQUEST_LOCATION = 10001;
 
     private MainPresenter presenter;
@@ -132,21 +131,14 @@ public class MainActivity extends AppCompatActivity
         SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
 
-
         RxSearchView.queryTextChanges(searchView)
                 .subscribe(charSequence -> {
                     presenter.search(String.valueOf(charSequence));
                 });
 
-
         searchView.setOnQueryTextFocusChangeListener((view, b) -> {
-            Log.d(TAG, "onFocusChange() called with: " + "view = [" + view + "], b = [" + b + "]");
-            if (b) {
-                getFabLocation().hide();
-
-            } else {
-                getFabLocation().show();
-            }
+            if (b) getFabLocation().hide();
+            else getFabLocation().show();
         });
     }
 
@@ -185,28 +177,16 @@ public class MainActivity extends AppCompatActivity
                 .doOnSubscribe(this::showProgress)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<List<StreetParkingInfo>>() {
-                    @Override
-                    public void onCompleted() {
-                        hideProgressAndRefresh();
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onNext(List<StreetParkingInfo> streetParkingInfos) {
-                        setRvStreetParking(streetParkingInfos);
-                    }
-
+                .subscribe(streetParkingInfos -> {
+                    setRvStreetParking(streetParkingInfos);
+                    hideProgressAndRefresh();
                 });
 
     }
 
     @Override
     public void setRvStreetParking(List<StreetParkingInfo> streetParkingInfos) {
+
 
         getRvStreetParking().setHasFixedSize(true);
         getRvStreetParking().setLayoutManager(new LinearLayoutManager(this));
@@ -324,29 +304,18 @@ public class MainActivity extends AppCompatActivity
                 .doOnSubscribe(this::showProgress)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<String>() {
-                    @Override
-                    public void onCompleted() {
-                        hideProgressAndRefresh();
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onNext(String s) {
-                        if (!"".equals(s.trim())) {
-                            if (!presenter.search(s)) {
-                                showNoResult();
-                            }
-
-                        } else {
+                .subscribe(s -> {
+                    if (!"".equals(s.trim())) {
+                        if (!presenter.search(s)) {
                             showNoResult();
-
                         }
+
+                    } else {
+                        showNoResult();
+
                     }
+
+                    hideProgressAndRefresh();
                 });
     }
 
