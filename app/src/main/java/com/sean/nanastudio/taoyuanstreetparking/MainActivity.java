@@ -21,12 +21,11 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.SearchManager;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
-import android.os.AsyncTask;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -39,11 +38,11 @@ import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -52,13 +51,24 @@ import android.widget.ProgressBar;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.jakewharton.rxbinding.support.v7.widget.RxRecyclerView;
+import com.jakewharton.rxbinding.support.v7.widget.RxSearchView;
+import com.jakewharton.rxbinding.view.RxView;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity
         implements MainView, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
 
+    private static final String TAG = "MainActivity";
+    
     private static final int PERMISSION_REQUEST_LOCATION = 10001;
 
     private MainPresenter presenter;
@@ -122,28 +132,20 @@ public class MainActivity extends AppCompatActivity
         SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
 
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                return false;
-            }
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                presenter.search(newText);
-                return false;
-            }
-        });
+        RxSearchView.queryTextChanges(searchView)
+                .subscribe(charSequence -> {
+                    presenter.search(String.valueOf(charSequence));
+                });
 
-        searchView.setOnQueryTextFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean b) {
-                if (b) {
-                    getFabLocation().hide();
 
-                } else {
-                    getFabLocation().show();
-                }
+        searchView.setOnQueryTextFocusChangeListener((view, b) -> {
+            Log.d(TAG, "onFocusChange() called with: " + "view = [" + view + "], b = [" + b + "]");
+            if (b) {
+                getFabLocation().hide();
+
+            } else {
+                getFabLocation().show();
             }
         });
     }
@@ -168,30 +170,39 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void getStreetParkingInfosFromAPI() {
-        new AsyncTask<Void, Void, List<StreetParkingInfo>>() {
 
+        Observable.create(new Observable.OnSubscribe<List<StreetParkingInfo>>() {
             @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                showProgress();
-            }
-
-            @Override
-            protected List<StreetParkingInfo> doInBackground(Void... voids) {
-                return presenter.getStreetParkingInfos();
-            }
-
-            @Override
-            protected void onPostExecute(List<StreetParkingInfo> streetParkingInfos) {
-                super.onPostExecute(streetParkingInfos);
-
-                hideProgressAndRefresh();
-
-                setRvStreetParking(streetParkingInfos);
-
+            public void call(Subscriber<? super List<StreetParkingInfo>> subscriber) {
+                List<StreetParkingInfo> streetParkingInfos =
+                        presenter.getStreetParkingInfos();
+                subscriber.onNext(streetParkingInfos);
+                subscriber.onCompleted();
 
             }
-        }.execute();
+        })
+                .subscribeOn(Schedulers.io())
+                .doOnSubscribe(this::showProgress)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<List<StreetParkingInfo>>() {
+                    @Override
+                    public void onCompleted() {
+                        hideProgressAndRefresh();
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(List<StreetParkingInfo> streetParkingInfos) {
+                        setRvStreetParking(streetParkingInfos);
+                    }
+
+                });
+
     }
 
     @Override
@@ -207,52 +218,39 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setScrollListener() {
-        getRvStreetParking().addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                if (dy > 0) {
-                    getFabLocation().hide();
 
-                } else {
-                    getFabLocation().show();
+        RxRecyclerView.scrollEvents(getRvStreetParking())
+                .subscribe(recyclerViewScrollEvent -> {
+                    if (recyclerViewScrollEvent.dy() > 0) {
+                        getFabLocation().hide();
 
-
-                }
-            }
-
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-                switch (newState) {
-                    case RecyclerView.SCROLL_STATE_IDLE:
+                    } else {
                         getFabLocation().show();
+                    }
+                });
 
-                        break;
-                }
+        RxRecyclerView.scrollStateChanges(getRvStreetParking())
+                .subscribe(integer -> {
+                    if (integer == 0) {
+                        getFabLocation().show();
+                    }
+                });
 
-
-            }
-        });
     }
 
     private void setSwipeRefreshLayout() {
-        getSrlStreetParking().setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                presenter.refresh();
-            }
-        });
+        getSrlStreetParking().setOnRefreshListener(() -> presenter.refresh());
     }
 
     @Override
     public void setFabLocationListener() {
-        getFabLocation().setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                getLocation(lastLocation);
-            }
-        });
+
+        RxView.clicks(getFabLocation())
+                .throttleFirst(1, TimeUnit.SECONDS)
+                .subscribe(aVoid -> {
+                    getLocation(lastLocation);
+                });
+
     }
 
     @Override
@@ -267,19 +265,13 @@ public class MainActivity extends AppCompatActivity
                 new AlertDialog.Builder(MainActivity.this)
                         .setTitle(getResources().getString(R.string.location_permission_title))
                         .setMessage(getResources().getString(R.string.location_permission_message))
-                        .setPositiveButton(getResources().getString(R.string.grant), new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                ActivityCompat.requestPermissions(MainActivity.this,
-                                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                                        PERMISSION_REQUEST_LOCATION);
-                            }
+                        .setPositiveButton(getResources().getString(R.string.grant), (dialogInterface, i) -> {
+                            ActivityCompat.requestPermissions(MainActivity.this,
+                                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                    PERMISSION_REQUEST_LOCATION);
                         })
-                        .setNegativeButton(getResources().getString(R.string.deny), new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                dialogInterface.dismiss();
-                            }
+                        .setNegativeButton(getResources().getString(R.string.deny), (dialogInterface, i) -> {
+                            dialogInterface.dismiss();
                         })
                         .show();
 
@@ -308,12 +300,8 @@ public class MainActivity extends AppCompatActivity
 
                 } else {
                     Snackbar.make(getContainer(), getResources().getString(R.string.location_permission_deny), Snackbar.LENGTH_LONG)
-                            .setAction(getResources().getString(R.string.setting), new View.OnClickListener() {
-                                @Override
-                                public void onClick(View view) {
-
-                                    startInstalledAppDetailsActivity(MainActivity.this);
-                                }
+                            .setAction(getResources().getString(R.string.setting), view -> {
+                                startInstalledAppDetailsActivity(MainActivity.this);
                             })
                             .show();
                 }
@@ -323,33 +311,43 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void getLocation(final Location location) {
-        new AsyncTask<Void, Void, String>() {
-            @Override
-            protected String doInBackground(Void... voids) {
 
-                return presenter.getLocation(location);
+        Observable.create(new Observable.OnSubscribe<String>() {
+            @Override
+            public void call(Subscriber<? super String> subscriber) {
+                String resultStr = presenter.getLocation(location);
+                subscriber.onNext(resultStr);
+                subscriber.onCompleted();
             }
-
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                showProgress();
-            }
-
-            @Override
-            protected void onPostExecute(String s) {
-                super.onPostExecute(s);
-                if (!"".equals(s.trim())) {
-                    if (!presenter.search(s)) {
-                        showNoResult();
+        })
+                .subscribeOn(Schedulers.io())
+                .doOnSubscribe(this::showProgress)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<String>() {
+                    @Override
+                    public void onCompleted() {
+                        hideProgressAndRefresh();
                     }
 
-                } else {
-                    showNoResult();
+                    @Override
+                    public void onError(Throwable e) {
 
-                }
-            }
-        }.execute();
+                    }
+
+                    @Override
+                    public void onNext(String s) {
+                        if (!"".equals(s.trim())) {
+                            if (!presenter.search(s)) {
+                                showNoResult();
+                            }
+
+                        } else {
+                            showNoResult();
+
+                        }
+                    }
+                });
     }
 
     public static void startInstalledAppDetailsActivity(final Activity context) {
@@ -432,19 +430,15 @@ public class MainActivity extends AppCompatActivity
     public void showNoResult() {
         Snackbar.make(getContainer(),
                 getResources().getString(R.string.no_result), Snackbar.LENGTH_LONG)
-                .setAction(getResources().getString(R.string.search_by_user_self), new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
+                .setAction(getResources().getString(R.string.search_by_user_self), view -> {
 
-                        searchItem.expandActionView();
-
-                        searchView.onActionViewExpanded();
-                        searchView.setFocusable(true);
-                        searchView.setIconified(false);
-                        searchView.setQuery("", false);
-                        searchView.requestFocus();
-                        searchView.requestFocusFromTouch();
-                    }
+                    searchItem.expandActionView();
+                    searchView.onActionViewExpanded();
+                    searchView.setFocusable(true);
+                    searchView.setIconified(false);
+                    searchView.setQuery("", false);
+                    searchView.requestFocus();
+                    searchView.requestFocusFromTouch();
                 })
                 .show();
     }

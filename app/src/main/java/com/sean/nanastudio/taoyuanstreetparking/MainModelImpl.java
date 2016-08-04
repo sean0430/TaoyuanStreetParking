@@ -28,6 +28,7 @@ import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import rx.Observable;
 
 /**
  * TaoyuanStreetParking
@@ -84,7 +85,7 @@ public class MainModelImpl implements MainModel {
     }
 
     private List<StreetParkingInfo> getDataFromAPI() {
-        List<StreetParkingInfo> streetParkingInfos = new ArrayList<>();
+        final List<StreetParkingInfo> streetParkingInfos = new ArrayList<>();
 
         Request request = new Request.Builder()
                 .url(DATA_URL)
@@ -108,12 +109,23 @@ public class MainModelImpl implements MainModel {
             JSONObject resultJSON = new JSONObject(resultStr);
             String recordsStr = resultJSON.getString(RECORDS);
             JSONArray recordJSON_ARRAY = new JSONArray(recordsStr);
+
+            List<JSONObject> jsonObjects = new ArrayList<>();
             for (int i = 0; i < recordJSON_ARRAY.length(); i++) {
-                JSONObject jsonObject = recordJSON_ARRAY.getJSONObject(i);
-                StreetParkingInfo streetParkingInfo =
-                        formatJSONToStreetParkingInfo(jsonObject);
-                streetParkingInfos.add(streetParkingInfo);
+                jsonObjects.add(recordJSON_ARRAY.getJSONObject(i));
             }
+
+            Observable.from(jsonObjects)
+                    .flatMap(Observable::just)
+                    .subscribe(jsonObject -> {
+                        try {
+                            StreetParkingInfo streetParkingInfo =
+                                    formatJSONToStreetParkingInfo(jsonObject);
+                            streetParkingInfos.add(streetParkingInfo);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    });
 
 
         } catch (JSONException e) {
@@ -144,14 +156,14 @@ public class MainModelImpl implements MainModel {
 
 
     @Override
-    public List<StreetParkingInfo> getSearchStreetParkingInfos(String queryStr) {
+    public List<StreetParkingInfo> getSearchStreetParkingInfos(final String queryStr) {
         this.queryStr = queryStr;
-        List<StreetParkingInfo> resultInfos = new ArrayList<>();
-        for (StreetParkingInfo streetParkingInfo : streetParkingInfos) {
-            if (streetParkingInfo.getRd_name().contains(queryStr)) {
-                resultInfos.add(streetParkingInfo);
-            }
-        }
+
+        final List<StreetParkingInfo> resultInfos = new ArrayList<>();
+        Observable.from(streetParkingInfos)
+                .filter(streetParkingInfo -> streetParkingInfo.getRd_name().contains(queryStr))
+                .subscribe(resultInfos::add);
+
         return resultInfos;
     }
 

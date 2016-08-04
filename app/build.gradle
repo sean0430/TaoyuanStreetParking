@@ -1,5 +1,23 @@
 apply plugin: 'com.android.application'
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'me.tatarka:gradle-retrolambda:3.2.5'
+    }
+}
+
+// Required because retrolambda is on maven central
+repositories {
+    mavenCentral()
+}
+
+apply plugin: 'com.android.application' //or apply plugin: 'java'
+apply plugin: 'me.tatarka.retrolambda'
+
 android {
     compileSdkVersion 24
     buildToolsVersion "24.0.1"
@@ -25,6 +43,12 @@ android {
     testOptions {
         unitTests.returnDefaultValues = true;
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
 }
 
 dependencies {
@@ -36,8 +60,14 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:24.1.1'
     compile 'com.android.support:cardview-v7:24.1.1'
     compile 'com.google.android.gms:play-services:9.4.0'
-    compile 'com.squareup.okhttp3:okhttp:3.4.1' //OkHttp
-    compile 'io.reactivex:rxjava:1.1.6' //RxJava
-    compile 'io.reactivex:rxandroid:1.2.1' //RxAndroid
-
+    //okHttp
+    compile 'com.squareup.okhttp3:okhttp:3.4.1'
+    //RxJava
+    compile 'io.reactivex:rxjava:1.1.6'
+    //RxAndroid
+    compile 'io.reactivex:rxandroid:1.2.1'
+    //RxBinding
+    compile 'com.jakewharton.rxbinding:rxbinding:0.4.0'
+    compile 'com.jakewharton.rxbinding:rxbinding-recyclerview-v7:0.4.0'
+    compile 'com.jakewharton.rxbinding:rxbinding-appcompat-v7:0.4.0'
 }

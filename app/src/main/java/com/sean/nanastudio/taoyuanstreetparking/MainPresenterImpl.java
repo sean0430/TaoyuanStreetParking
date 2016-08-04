@@ -22,11 +22,17 @@ import android.location.Location;
 import java.util.ArrayList;
 import java.util.List;
 
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+
 /**
  * TaoyuanStreetParking
  * Created by Sean on 2016/7/22下午12:26.
  */
 public class MainPresenterImpl implements MainPresenter {
+
 
     private final MainView view;
     private final MainModel model;
@@ -62,26 +68,45 @@ public class MainPresenterImpl implements MainPresenter {
 
 
     @Override
-    public boolean search(String queryStr) {
+    public boolean search(final String queryStr) {
 
-        view.showProgress();
+        final boolean[] isHasResult = {false};
+        Observable.create(new Observable.OnSubscribe<List<StreetParkingInfo>>() {
+            @Override
+            public void call(Subscriber<? super List<StreetParkingInfo>> subscriber) {
+                List<StreetParkingInfo> streetParkingInfos = model.getSearchStreetParkingInfos(queryStr);
+                subscriber.onNext(streetParkingInfos);
+            }
+        })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<List<StreetParkingInfo>>() {
+                    @Override
+                    public void onCompleted() {
+                        view.hideProgressAndRefresh();
+                    }
 
-        List<StreetParkingInfo> streetParkingInfos = new ArrayList<>();
+                    @Override
+                    public void onError(Throwable e) {
 
-        if (!"".equals(queryStr.trim())) {
-            streetParkingInfos = model.getSearchStreetParkingInfos(queryStr);
+                    }
 
-        }
+                    @Override
+                    public void onNext(List<StreetParkingInfo> streetParkingInfos) {
+                        if (streetParkingInfos.size() > 0) {
+                            view.setRvStreetParking(streetParkingInfos);
+                            isHasResult[0] = true;
 
-        view.hideProgressAndRefresh();
+                        }
+                    }
 
-        if (streetParkingInfos.size() > 0) {
-            view.setRvStreetParking(streetParkingInfos);
-            return true;
-
-        } else {
-            return false;
-        }
+                    @Override
+                    public void onStart() {
+                        super.onStart();
+                        view.showProgress();
+                    }
+                });
+        return isHasResult[0];
 
 
     }
