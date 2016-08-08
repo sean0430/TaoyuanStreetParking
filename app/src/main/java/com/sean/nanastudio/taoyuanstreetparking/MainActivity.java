@@ -66,8 +66,6 @@ public class MainActivity extends AppCompatActivity
         implements MainView, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String TAG = "MainActivity";
-
     private static final int PERMISSION_REQUEST_LOCATION = 10001;
 
     private MainPresenter presenter;
@@ -96,6 +94,24 @@ public class MainActivity extends AppCompatActivity
     protected void onStop() {
         presenter.onStop();
         super.onStop();
+    }
+
+    @Override
+    public void setLayoutContentView() {
+        setContentView(R.layout.activity_main);
+    }
+
+    @Override
+    public void setActionBar() {
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(false);
+        }
+
     }
 
     @Override
@@ -140,24 +156,6 @@ public class MainActivity extends AppCompatActivity
             if (b) getFabLocation().hide();
             else getFabLocation().show();
         });
-    }
-
-    @Override
-    public void setActionBar() {
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        final ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(false);
-        }
-
-    }
-
-    @Override
-    public void setLayoutContentView() {
-        setContentView(R.layout.activity_main);
     }
 
     @Override
@@ -307,11 +305,11 @@ public class MainActivity extends AppCompatActivity
                 .subscribe(s -> {
                     if (!"".equals(s.trim())) {
                         if (!presenter.search(s)) {
-                            showNoResult();
+                            showNoResult(s);
                         }
 
                     } else {
-                        showNoResult();
+                        showNoResult(s);
 
                     }
 
@@ -357,6 +355,12 @@ public class MainActivity extends AppCompatActivity
         if (googleApiClient != null) googleApiClient.disconnect();
     }
 
+    @Override
+    public String getApiKey() {
+        return getResources().getString(R.string.API_KEY);
+    }
+
+
 
     // Google service callback
 
@@ -396,9 +400,23 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void showNoResult() {
-        Snackbar.make(getContainer(),
-                getResources().getString(R.string.no_result), Snackbar.LENGTH_LONG)
+    public void showNoResult(String queryStr) {
+
+        String snackBarMessage;
+
+        if ("".equals(queryStr.trim())) {
+            snackBarMessage = getResources().getString(R.string.no_result);
+
+        } else {
+            snackBarMessage = String.format("%s %s %s",
+                    getResources().getString(R.string.no_result_1),
+                    queryStr,
+                    getResources().getString(R.string.no_result_2));
+        }
+
+        presenter.clearQueryStr();
+
+        Snackbar.make(getContainer(), snackBarMessage, Snackbar.LENGTH_LONG)
                 .setAction(getResources().getString(R.string.search_by_user_self), view -> {
 
                     searchItem.expandActionView();
@@ -412,13 +430,8 @@ public class MainActivity extends AppCompatActivity
                 .show();
     }
 
-    @Override
-    public String getApiKey() {
-        return getResources().getString(R.string.API_KEY);
-    }
 
-
-    // Find view by ids..
+    // Get views's id..
 
     private CoordinatorLayout getContainer() {
         return (CoordinatorLayout) findViewById(R.id.container);

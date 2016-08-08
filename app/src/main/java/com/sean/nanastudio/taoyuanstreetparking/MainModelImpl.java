@@ -108,6 +108,7 @@ public class MainModelImpl implements MainModel {
         Observable.just(responseStr)
                 .flatMap((Func1<String, Observable<?>>) s -> {
                     List<JSONObject> jsonObjects = new ArrayList<>();
+
                     try {
                         JSONObject responseJSON = new JSONObject(finalResponseStr);
                         String resultStr = responseJSON.getString(RESULT);
@@ -121,6 +122,7 @@ public class MainModelImpl implements MainModel {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
+
                     return Observable.from(jsonObjects);
                 })
                 .subscribe(jsonObject -> {
@@ -231,10 +233,10 @@ public class MainModelImpl implements MainModel {
 
     private String getSubString(String targetStr) {
         if (targetStr.indexOf(ROAD) > 0) {
-            return targetStr.substring(0, targetStr.indexOf(ROAD));
+            return targetStr.substring(0, targetStr.indexOf(ROAD) + 1);
 
         } else if (targetStr.indexOf(STREET) > 0) {
-            return targetStr.substring(0, targetStr.indexOf(STREET));
+            return targetStr.substring(0, targetStr.indexOf(STREET) + 1);
 
         } else {
             return STREET_OR_ROAD_NAME_NOT_FOUND;

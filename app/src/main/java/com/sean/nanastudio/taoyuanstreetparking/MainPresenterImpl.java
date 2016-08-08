@@ -50,6 +50,7 @@ public class MainPresenterImpl implements MainPresenter {
         model.setApiKey(apiKey);
         view.getStreetParkingInfosFromAPI();
         view.setFabLocationListener();
+        view.initialGoogleApiClient();
     }
 
     @Override
@@ -121,14 +122,13 @@ public class MainPresenterImpl implements MainPresenter {
         List<StreetParkingInfo> streetParkingInfos;
 
         if ("".equals(queryStr)) {
-            streetParkingInfos = model.getStreetParkingInfos();
+            view.getStreetParkingInfosFromAPI();
 
         } else {
             streetParkingInfos = model.getSearchStreetParkingInfos(queryStr);
+            view.setRvStreetParking(streetParkingInfos);
 
         }
-
-        view.setRvStreetParking(streetParkingInfos);
 
         view.hideProgressAndRefresh();
 

@@ -46,7 +46,7 @@ public interface MainView {
 
     void disconnectGoogleApiClient();
 
-    void showNoResult();
+    void showNoResult(String queryStr);
 
     String getApiKey();
 }

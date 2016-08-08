@@ -13,6 +13,8 @@
     <string name="location_permission_deny">位置權限取得失敗</string>
     <string name="setting">設定</string>
     <string name="no_result">很抱歉，無法取得所在位置路名</string>
+    <string name="no_result_1">很抱歉，搜尋</string>
+    <string name="no_result_2">沒有結果</string>
     <string name="search_by_user_self">手動搜尋</string>
 
 </resources>
