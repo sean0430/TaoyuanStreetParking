@@ -58,7 +58,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
-import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -161,16 +160,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void getStreetParkingInfosFromAPI() {
 
-        Observable.create(new Observable.OnSubscribe<List<StreetParkingInfo>>() {
-            @Override
-            public void call(Subscriber<? super List<StreetParkingInfo>> subscriber) {
-                List<StreetParkingInfo> streetParkingInfos =
-                        presenter.getStreetParkingInfos();
-                subscriber.onNext(streetParkingInfos);
-                subscriber.onCompleted();
-
-            }
-        })
+        Observable.fromCallable(() -> presenter.getStreetParkingInfos())
                 .subscribeOn(Schedulers.io())
                 .doOnSubscribe(this::showProgress)
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -290,14 +280,7 @@ public class MainActivity extends AppCompatActivity
 
     private void getLocation(final Location location) {
 
-        Observable.create(new Observable.OnSubscribe<String>() {
-            @Override
-            public void call(Subscriber<? super String> subscriber) {
-                String resultStr = presenter.getLocation(location);
-                subscriber.onNext(resultStr);
-                subscriber.onCompleted();
-            }
-        })
+        Observable.fromCallable(() -> presenter.getLocation(location))
                 .subscribeOn(Schedulers.io())
                 .doOnSubscribe(this::showProgress)
                 .subscribeOn(AndroidSchedulers.mainThread())
