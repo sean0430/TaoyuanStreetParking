@@ -44,8 +44,6 @@ import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ProgressBar;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -53,6 +51,7 @@ import com.google.android.gms.location.LocationServices;
 import com.jakewharton.rxbinding.support.v7.widget.RxRecyclerView;
 import com.jakewharton.rxbinding.support.v7.widget.RxSearchView;
 import com.jakewharton.rxbinding.view.RxView;
+import com.tbruyelle.rxpermissions.RxPermissions;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +92,18 @@ public class MainActivity extends AppCompatActivity
     protected void onStop() {
         presenter.onStop();
         super.onStop();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+
+        if (presenter.viewIsInSearch()) {
+            presenter.clearQueryStr();
+
+        } else {
+            finish();
+        }
     }
 
     @Override
@@ -215,14 +226,21 @@ public class MainActivity extends AppCompatActivity
 
         RxView.clicks(getFabLocation())
                 .throttleFirst(1, TimeUnit.SECONDS)
-                .subscribe(aVoid -> {
-                    getLocation(lastLocation);
+                .compose(RxPermissions.getInstance(this).ensure(Manifest.permission.ACCESS_COARSE_LOCATION))
+                .subscribe(granted -> {
+                    if (granted) {
+                        getLocation(lastLocation);
+
+                    } else {
+                        requestLocationPermission();
+                    }
+
                 });
 
     }
 
     @Override
-    public void checkLocationPermission() {
+    public void requestLocationPermission() {
         if (ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
@@ -287,9 +305,11 @@ public class MainActivity extends AppCompatActivity
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(s -> {
                     if (!"".equals(s.trim())) {
-                        if (!presenter.search(s)) {
+                        boolean hasResult = presenter.search(s);
+                        if (!hasResult) {
                             showNoResult(s);
                         }
+
 
                     } else {
                         showNoResult(s);
@@ -344,7 +364,6 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-
     // Google service callback
 
     @Override
@@ -373,16 +392,17 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void showProgress() {
-        getPbLoading().setVisibility(View.VISIBLE);
+        if (!getSrlStreetParking().isRefreshing())
+            getSrlStreetParking().setRefreshing(true);
     }
 
     @Override
     public void hideProgressAndRefresh() {
-        getPbLoading().setVisibility(View.GONE);
         getSrlStreetParking().setRefreshing(false);
     }
 
     @Override
+
     public void showNoResult(String queryStr) {
 
         String snackBarMessage;
@@ -418,10 +438,6 @@ public class MainActivity extends AppCompatActivity
 
     private CoordinatorLayout getContainer() {
         return (CoordinatorLayout) findViewById(R.id.container);
-    }
-
-    private ProgressBar getPbLoading() {
-        return (ProgressBar) findViewById(R.id.pbLoading);
     }
 
     private SwipeRefreshLayout getSrlStreetParking() {

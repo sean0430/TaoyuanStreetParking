@@ -28,7 +28,7 @@ public interface MainView {
 
     void setFabLocationListener();
 
-    void checkLocationPermission();
+    void requestLocationPermission();
 
     void initialGoogleApiClient();
 

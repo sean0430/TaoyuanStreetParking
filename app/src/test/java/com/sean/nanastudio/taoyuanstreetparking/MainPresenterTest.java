@@ -135,9 +135,19 @@ public class MainPresenterTest {
 
         presenter.getLocation(null);
 
-        Mockito.verify(view).checkLocationPermission();
+//        Mockito.verify(view).requestLocationPermission();
         Mockito.verify(view).initialGoogleApiClient();
         Mockito.verify(view).connectGoogleApiClient();
 
     }
+
+    @Test
+    public void testViewIsInSearch() throws Exception {
+
+        presenter.search("test");
+        Assert.assertTrue(presenter.viewIsInSearch());
+
+    }
+
+
 }

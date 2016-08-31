@@ -43,4 +43,5 @@ public interface MainPresenter {
 
     String getLocation(Location location);
 
+    boolean viewIsInSearch();
 }

@@ -46,7 +46,7 @@ public class MainModelImpl implements MainModel {
     private static final String SHORT_NAME = "short_name";
     private static final String ROAD = "路";
     private static final String STREET = "街";
-    private static final String STREET_OR_ROAD_NAME_NOT_FOUND = "Street or road name not found";
+    private static final String STREET_OR_ROAD_NAME_NOT_FOUND = "未知路名";
     private String API_KEY;
 
 
@@ -157,7 +157,6 @@ public class MainModelImpl implements MainModel {
 
         return new StreetParkingInfo("", "", "", "", "", "", "", null);
     }
-
 
     @Override
     public List<StreetParkingInfo> getSearchStreetParkingInfos(final String queryStr) {

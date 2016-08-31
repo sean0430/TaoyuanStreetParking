@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import rx.Observable;
-import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -72,40 +71,20 @@ public class MainPresenterImpl implements MainPresenter {
     public boolean search(final String queryStr) {
 
         final boolean[] isHasResult = {false};
-        Observable.create(new Observable.OnSubscribe<List<StreetParkingInfo>>() {
-            @Override
-            public void call(Subscriber<? super List<StreetParkingInfo>> subscriber) {
-                List<StreetParkingInfo> streetParkingInfos = model.getSearchStreetParkingInfos(queryStr);
-                subscriber.onNext(streetParkingInfos);
-            }
-        })
+        Observable.fromCallable(() -> model.getSearchStreetParkingInfos(queryStr))
                 .subscribeOn(Schedulers.io())
+                .doOnSubscribe(view::showProgress)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<List<StreetParkingInfo>>() {
-                    @Override
-                    public void onCompleted() {
-                        view.hideProgressAndRefresh();
+                .subscribe(streetParkingInfos -> {
+                    if (streetParkingInfos.size() > 0) {
+                        view.setRvStreetParking(streetParkingInfos);
+                        isHasResult[0] = true;
+
+                    } else {
+                        view.showNoResult(queryStr);
                     }
 
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onNext(List<StreetParkingInfo> streetParkingInfos) {
-                        if (streetParkingInfos.size() > 0) {
-                            view.setRvStreetParking(streetParkingInfos);
-                            isHasResult[0] = true;
-
-                        }
-                    }
-
-                    @Override
-                    public void onStart() {
-                        super.onStart();
-                        view.showProgress();
-                    }
+                    view.hideProgressAndRefresh();
                 });
         return isHasResult[0];
 
@@ -153,7 +132,7 @@ public class MainPresenterImpl implements MainPresenter {
     public String getLocation(Location location) {
         String resultStr = "";
         if (location == null) {
-            view.checkLocationPermission();
+//            view.requestLocationPermission();
             view.initialGoogleApiClient();
             view.connectGoogleApiClient();
 
@@ -166,6 +145,11 @@ public class MainPresenterImpl implements MainPresenter {
         }
 
         return resultStr;
+    }
+
+    @Override
+    public boolean viewIsInSearch() {
+        return !"".equals(model.getQueryStr());
     }
 
 
