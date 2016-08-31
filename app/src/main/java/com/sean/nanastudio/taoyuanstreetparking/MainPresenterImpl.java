@@ -24,6 +24,9 @@ import java.util.List;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.internal.util.ActionSubscriber;
 import rx.schedulers.Schedulers;
 
 /**
@@ -75,17 +78,19 @@ public class MainPresenterImpl implements MainPresenter {
                 .subscribeOn(Schedulers.io())
                 .doOnSubscribe(view::showProgress)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(streetParkingInfos -> {
-                    if (streetParkingInfos.size() > 0) {
-                        view.setRvStreetParking(streetParkingInfos);
-                        isHasResult[0] = true;
+                .subscribe(new ActionSubscriber<>(
+                        streetParkingInfos -> {
+                            if (streetParkingInfos.size() > 0) {
+                                view.setRvStreetParking(streetParkingInfos);
+                                isHasResult[0] = true;
 
-                    } else {
-                        view.showNoResult(queryStr);
-                    }
-
-                    view.hideProgressAndRefresh();
-                });
+                            } else {
+                                view.showNoResult(queryStr);
+                            }
+                        },
+                        (Action1<Throwable>) throwable -> view.showNoResult(queryStr),
+                        (Action0) view::hideProgressAndRefresh
+                ));
         return isHasResult[0];
 
 
@@ -132,7 +137,6 @@ public class MainPresenterImpl implements MainPresenter {
     public String getLocation(Location location) {
         String resultStr = "";
         if (location == null) {
-//            view.requestLocationPermission();
             view.initialGoogleApiClient();
             view.connectGoogleApiClient();
 
