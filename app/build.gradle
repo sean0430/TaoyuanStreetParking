@@ -26,8 +26,8 @@ android {
         applicationId "com.sean.nanastudio.taoyuanstreetparking"
         minSdkVersion 16
         targetSdkVersion 24
-        versionCode 7
-        versionName '2.11'
+        versionCode 8
+        versionName '2.2'
 
         multiDexEnabled true
     }
@@ -62,7 +62,9 @@ dependencies {
     compile 'com.google.android.gms:play-services:9.4.0'
     compile 'com.android.support:multidex:1.0.1'
     //okHttp
-    compile 'com.squareup.okhttp3:okhttp:3.4.1'
+//    compile 'com.squareup.okhttp3:okhttp:3.4.1'
+    //retrofit
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
     //RxJava
     compile 'io.reactivex:rxjava:1.1.6'
     //RxAndroid
